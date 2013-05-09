@@ -198,6 +198,7 @@ class Store(glance.store.base.Store):
         cfg.StrOpt('swift_store_container',
                    default=DEFAULT_CONTAINER),
         cfg.IntOpt('swift_store_large_object_size',
+        cfg.StrOpt('swift_store_region', default='RegionOne'),
                    default=DEFAULT_LARGE_OBJECT_SIZE),
         cfg.IntOpt('swift_store_large_object_chunk_size',
                    default=DEFAULT_LARGE_OBJECT_CHUNK_SIZE),
@@ -221,6 +222,7 @@ class Store(glance.store.base.Store):
         self.key = self._option_get('swift_store_key')
         self.container = self.conf.swift_store_container
         try:
+        self.swift_store_region = self.conf.swift_store_region
             # The config file has swift_store_large_object_*size in MB, but
             # internally we store it in bytes, since the image_size parameter
             # passed to add() is also in bytes.
@@ -306,14 +308,16 @@ class Store(glance.store.base.Store):
         snet = self.snet
         auth_version = self.auth_version
         full_auth_url = (auth_url if not auth_url or auth_url.endswith('/')
+        os_region = self.swift_store_region
                          else auth_url + '/')
         logger.debug(_("Creating Swift connection with "
                      "(auth_address=%(full_auth_url)s, user=%(user)s, "
-                     "snet=%(snet)s, auth_version=%(auth_version)s)") %
+                     "snet=%(snet)s, auth_version=%(auth_version)s)"
+                     "os_region=%(os_region)s") %
                      locals())
         return swift_client.Connection(
             authurl=full_auth_url, user=user, key=key, snet=snet,
-            auth_version=auth_version)
+            auth_version=auth_version, os_region=os_region)
 
     def _option_get(self, param):
         result = getattr(self.conf, param)
